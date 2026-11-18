@@ -33,7 +33,7 @@ A body longer than the cap is cut at the largest character boundary at or below 
 
 ### Config
 
-The file named by the environment variable the consumer passes to `ServeConfig::load` when it is set and non-empty; otherwise `$XDG_CONFIG_HOME/fleet-mcp/config.toml`, else `$HOME/.config/fleet-mcp/config.toml` (an empty `XDG_CONFIG_HOME` or `HOME` counts as unset). A missing default file, neither `XDG_CONFIG_HOME` nor `HOME` set, or a file without a `[tools.<name>]` section for the consumer, means defaults; a missing explicitly named file is an error. Unknown keys anywhere in the file are an error.
+The file named by the environment variable the consumer passes to `ServeConfig::load` when it is set and non-empty; otherwise `$XDG_CONFIG_HOME/fleet-mcp/config.toml`, else `$HOME/.config/fleet-mcp/config.toml` (an empty `XDG_CONFIG_HOME` or `HOME` counts as unset). The directory name `fleet-mcp` is a fixed convention shared with the tools that consume this crate and does not follow the crate name. A missing default file, neither `XDG_CONFIG_HOME` nor `HOME` set, or a file without a `[tools.<name>]` section for the consumer, means defaults; a missing explicitly named file is an error. Unknown keys anywhere in the file are an error.
 
 ```toml
 [tools.websearch]

@@ -8,8 +8,8 @@ use std::time::Duration;
 /// server abandons it.
 pub const TOOL_TIMEOUT_MARGIN: Duration = Duration::from_secs(30);
 
-/// Deadline for one call. A tool that takes its own `timeout_seconds` (the Gitea
-/// `await_*` waits) is allowed to run that long, from the call's argument or the schema
+/// Deadline for one call. A tool that takes its own `timeout_seconds` (for example a
+/// long-poll wait tool) is allowed to run that long, from the call's argument or the schema
 /// default, plus a margin; the configured timeout is the floor.
 pub fn effective_timeout(
     configured: Duration,
