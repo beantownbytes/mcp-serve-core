@@ -1,6 +1,6 @@
 [package]
 name = "mcp-serve-core"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 rust-version = "1.88"
 description = "Shared native-MCP serving core for tool servers"
@@ -16,6 +16,9 @@ path = "src/lib.rs"
 
 [features]
 testing = []
+
+[package.metadata.docs.rs]
+all-features = true
 
 [dependencies]
 rmcp = { version = "=3.10.0", features = ["server", "transport-io"] }
