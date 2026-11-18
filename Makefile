@@ -1,7 +1,7 @@
 # Root Makefile for mcp-serve-core. Library only: no binaries, no release artifacts.
 # Loops the rust/ and go/ sub-Makefiles. Run `make help` for the target list.
 
-VERSION      := $(shell cat VERSION 2>/dev/null || echo 0.0.0)
+VERSION      := $(shell awk -F'"' '/^version[[:space:]]*=/ { print $$2; exit }' rust/Cargo.toml)
 SUBDIRS_ALL  := rust go
 
 .PHONY: help bootstrap test fmt fmt-check lint check version clean

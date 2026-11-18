@@ -113,7 +113,11 @@ fn handshake_with_no_config_returns_server_info_and_default_instructions() {
     let init = by_id(&responses, 1);
     assert_eq!(init["result"]["protocolVersion"], "2025-06-18", "{init}");
     assert_eq!(init["result"]["serverInfo"]["name"], "demo", "{init}");
-    assert_eq!(init["result"]["serverInfo"]["version"], "0.1.0", "{init}");
+    assert_eq!(
+        init["result"]["serverInfo"]["version"],
+        env!("CARGO_PKG_VERSION"),
+        "{init}"
+    );
     assert_eq!(
         init["result"]["instructions"], "Demo tools for mcp-serve-core.",
         "{init}"

@@ -90,7 +90,11 @@ fn specs() -> Vec<ToolSpec> {
 async fn main() {
     let result = match ServeConfig::load("demo", CONFIG_ENV) {
         Ok(config) => {
-            let info = ServerInfo::new("demo", "0.1.0", "Demo tools for mcp-serve-core.");
+            let info = ServerInfo::new(
+                "demo",
+                env!("CARGO_PKG_VERSION"),
+                "Demo tools for mcp-serve-core.",
+            );
             serve_stdio(info, specs(), config).await
         }
         Err(e) => Err(e),

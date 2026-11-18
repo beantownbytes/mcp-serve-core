@@ -56,7 +56,14 @@ The deadline is the configured timeout. A call that carries a positive whole `ti
 
 ### Depend on it
 
-The crate is not published to crates.io; depend on it by git and pin an exact commit:
+From crates.io:
+
+```toml
+[dependencies]
+mcp-serve-core = "0.1"
+```
+
+Or by git, pinned to an exact commit:
 
 ```toml
 [dependencies]
@@ -112,7 +119,7 @@ The `testing` cargo feature (enable it on a dev-dependency) exports `session`, `
 go get github.com/beantownbytes/mcp-serve-core/go@<sha>
 ```
 
-Pin a commit, as the Rust side does: `@<sha>` records the resolved pseudo-version (`v0.0.0-<timestamp>-<sha>`) in the consumer's `go.mod` and `go.sum`. `@main` drifts as main advances and is only for a throwaway trial.
+Pin a commit, as the Rust git snippet does: `@<sha>` records the resolved pseudo-version (`v0.0.0-<timestamp>-<sha>`) in the consumer's `go.mod` and `go.sum`. `@main` drifts as main advances and is only for a throwaway trial.
 
 ### Helpers
 
@@ -152,7 +159,7 @@ make bootstrap   # toolchains (Rust 1.97.1, Go 1.27.3)
 make check       # fmt-check, lint, test in rust/ and go/
 ```
 
-`VERSION` holds the current release number and is edited by hand.
+The Rust crate version in `rust/Cargo.toml` is the release number (`make version` prints it) and is edited by hand. Publishing is `cargo publish` from `rust/`; the Go module lives in `go/`, so its releases will be tagged `go/vX.Y.Z` (none exist yet; pin a commit until then).
 
 ## License
 

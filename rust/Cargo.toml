@@ -6,7 +6,10 @@ rust-version = "1.88"
 description = "Shared native-MCP serving core for tool servers"
 license = "MIT"
 repository = "https://github.com/beantownbytes/mcp-serve-core"
-publish = false
+readme = "../README.md"
+keywords = ["mcp", "mcp-server", "server", "stdio", "rmcp"]
+categories = ["development-tools", "asynchronous"]
+exclude = ["Makefile", "rust-toolchain.toml"]
 
 [lib]
 path = "src/lib.rs"
