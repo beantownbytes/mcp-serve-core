@@ -1,0 +1,87 @@
+name: release
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: release
+  cancel-in-progress: false
+defaults:
+  run:
+    shell: bash
+jobs:
+  plan:
+    if: github.repository == 'beantownbytes/mcp-serve-core'
+    runs-on: ubuntu-latest
+    container:
+      image: node:22-trixie
+    outputs:
+      publish: ${{ steps.decide.outputs.publish }}
+      version: ${{ steps.decide.outputs.version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: install host deps
+        run: apt-get update && apt-get install -y --no-install-recommends make curl ca-certificates
+      - name: decide whether this commit releases a new version
+        id: decide
+        run: |
+          set -euo pipefail
+          crate=mcp-serve-core
+          version=$(make --no-print-directory version)
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::unexpected version '$version'"; exit 1; }
+          ua="mcp-serve-core-release (https://github.com/beantownbytes/mcp-serve-core)"
+          status() { curl -sS --max-time 30 --retry 3 --retry-all-errors -o /dev/null -w '%{http_code}' -A "$ua" "$1"; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          crate_status=$(status "https://crates.io/api/v1/crates/$crate")
+          case "$crate_status" in
+            200) ;;
+            404)
+              echo "::notice::$crate is not on crates.io yet; the first release is published by hand"
+              echo "publish=false" >> "$GITHUB_OUTPUT"
+              exit 0 ;;
+            *) echo "::error::crates.io returned $crate_status for the crate lookup"; exit 1 ;;
+          esac
+          version_status=$(status "https://crates.io/api/v1/crates/$crate/$version")
+          case "$version_status" in
+            200)
+              echo "::notice::$crate $version is already on crates.io; nothing to publish"
+              echo "publish=false" >> "$GITHUB_OUTPUT" ;;
+            404)
+              lock_version=$(awk -F'"' -v n="name = \"$crate\"" '$0 == n { getline; print $2; exit }' rust/Cargo.lock)
+              if [ "$lock_version" != "$version" ]; then
+                echo "::error::rust/Cargo.lock records $crate $lock_version but Cargo.toml says $version; commit the updated lockfile with the version bump"
+                exit 1
+              fi
+              echo "::notice::$crate $version is new and will be published"
+              echo "publish=true" >> "$GITHUB_OUTPUT" ;;
+            *) echo "::error::crates.io returned $version_status for the version lookup"; exit 1 ;;
+          esac
+  publish:
+    name: publish ${{ needs.plan.outputs.version }}
+    needs: plan
+    if: github.repository == 'beantownbytes/mcp-serve-core' && needs.plan.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    container:
+      image: node:22-trixie
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: install host deps
+        run: apt-get update && apt-get install -y --no-install-recommends make build-essential git ca-certificates curl
+      - run: make bootstrap
+      - run: make check
+      - uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
+        id: auth
+      - name: publish
+        working-directory: rust
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: PATH="$HOME/.cargo/bin:$PATH" cargo publish --locked

@@ -159,7 +159,7 @@ make bootstrap   # toolchains (Rust 1.97.1, Go 1.27.3)
 make check       # fmt-check, lint, test in rust/ and go/
 ```
 
-The Rust crate version in `rust/Cargo.toml` is the release number (`make version` prints it) and is edited by hand. Publishing is `cargo publish` from `rust/`; the Go module lives in `go/`, so its releases will be tagged `go/vX.Y.Z` (none exist yet; pin a commit until then).
+The Rust crate version in `rust/Cargo.toml` is the release number (`make version` prints it) and is edited by hand, together with the refreshed `rust/Cargo.lock`. The first release is published by hand with `cargo publish` from `rust/`. After that, a push to `main` that sets a version not yet on crates.io publishes it from `.github/workflows/release.yml` through crates.io trusted publishing, behind the `release` environment; a push that leaves the version unchanged does nothing. The Go module lives in `go/`, so its releases will be tagged `go/vX.Y.Z` (none exist yet; pin a commit until then).
 
 ## License
 
