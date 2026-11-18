@@ -1,0 +1,30 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    container:
+      image: node:22-trixie
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: install host deps
+        run: apt-get update && apt-get install -y --no-install-recommends make build-essential git ca-certificates curl
+      - run: make bootstrap
+      - run: make check
