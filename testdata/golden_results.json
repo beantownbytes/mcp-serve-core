@@ -1,0 +1,212 @@
+[
+  {
+    "name": "unknown_tool",
+    "outcome": "UnknownTool",
+    "args": "nope",
+    "cap": 16,
+    "expect": {
+      "text": "unknown tool 'nope'",
+      "isError": true
+    }
+  },
+  {
+    "name": "unknown_tool_long_name_is_not_cut",
+    "outcome": "UnknownTool",
+    "args": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    "cap": 1,
+    "expect": {
+      "text": "unknown tool 'nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn'",
+      "isError": true
+    }
+  },
+  {
+    "name": "timed_out",
+    "outcome": "TimedOut",
+    "args": 1,
+    "cap": 16,
+    "expect": {
+      "text": "timed out after 1s",
+      "isError": true
+    }
+  },
+  {
+    "name": "timed_out_has_no_footer_with_a_tiny_cap",
+    "outcome": "TimedOut",
+    "args": 7230,
+    "cap": 1,
+    "expect": {
+      "text": "timed out after 7230s",
+      "isError": true
+    }
+  },
+  {
+    "name": "canceled_has_no_body_with_a_tiny_cap",
+    "outcome": "Canceled",
+    "args": null,
+    "cap": 1,
+    "expect": {
+      "text": "canceled",
+      "isError": true
+    }
+  },
+  {
+    "name": "panicked",
+    "outcome": "Panicked",
+    "args": null,
+    "cap": 16,
+    "expect": {
+      "text": "tool handler panicked",
+      "isError": true
+    }
+  },
+  {
+    "name": "success_under_the_cap",
+    "outcome": "Success",
+    "args": "hello",
+    "cap": 16,
+    "expect": {
+      "text": "hello",
+      "isError": false
+    }
+  },
+  {
+    "name": "success_exactly_at_the_cap",
+    "outcome": "Success",
+    "args": "aaaaaaaaaaaaaaaa",
+    "cap": 16,
+    "expect": {
+      "text": "aaaaaaaaaaaaaaaa",
+      "isError": false
+    }
+  },
+  {
+    "name": "success_over_the_cap_gets_the_footer",
+    "outcome": "Success",
+    "args": "aaaaaaaaaaaaaaaaaaaaa",
+    "cap": 16,
+    "expect": {
+      "text": "aaaaaaaaaaaaaaaa\n[output truncated at the configured byte cap]",
+      "isError": false
+    }
+  },
+  {
+    "name": "success_cut_is_not_trimmed",
+    "outcome": "Success",
+    "args": "aaaaaaaaaaaaa   tail",
+    "cap": 16,
+    "expect": {
+      "text": "aaaaaaaaaaaaa   \n[output truncated at the configured byte cap]",
+      "isError": false
+    }
+  },
+  {
+    "name": "success_body_is_not_trimmed_under_the_cap",
+    "outcome": "Success",
+    "args": "hello\n",
+    "cap": 16,
+    "expect": {
+      "text": "hello\n",
+      "isError": false
+    }
+  },
+  {
+    "name": "success_multibyte_char_straddling_the_cap_is_dropped_whole",
+    "outcome": "Success",
+    "args": "aaaaaaaaaaaaaaa€€",
+    "cap": 16,
+    "expect": {
+      "text": "aaaaaaaaaaaaaaa\n[output truncated at the configured byte cap]",
+      "isError": false
+    }
+  },
+  {
+    "name": "success_multibyte_char_ending_exactly_at_the_cap_is_kept",
+    "outcome": "Success",
+    "args": "aaaaaaaaaaaaa€€",
+    "cap": 16,
+    "expect": {
+      "text": "aaaaaaaaaaaaa€\n[output truncated at the configured byte cap]",
+      "isError": false
+    }
+  },
+  {
+    "name": "policy_is_right_trimmed",
+    "outcome": "Policy",
+    "args": "not allowed\n",
+    "cap": 16,
+    "expect": {
+      "text": "policy refusal (exit 3): not allowed",
+      "isError": true
+    }
+  },
+  {
+    "name": "policy_cut_is_trimmed_before_the_footer",
+    "outcome": "Policy",
+    "args": "aaaaaaaaaaaaa   tail",
+    "cap": 16,
+    "expect": {
+      "text": "policy refusal (exit 3): aaaaaaaaaaaaa\n[output truncated at the configured byte cap]",
+      "isError": true
+    }
+  },
+  {
+    "name": "tool_is_right_trimmed",
+    "outcome": "Tool",
+    "args": "boom \t\n",
+    "cap": 16,
+    "expect": {
+      "text": "exit 2: boom",
+      "isError": true
+    }
+  },
+  {
+    "name": "tool_over_the_cap_gets_the_footer",
+    "outcome": "Tool",
+    "args": "bbbbbbbbbbbbbbbbb",
+    "cap": 16,
+    "expect": {
+      "text": "exit 2: bbbbbbbbbbbbbbbb\n[output truncated at the configured byte cap]",
+      "isError": true
+    }
+  },
+  {
+    "name": "tool_multibyte_char_ending_exactly_at_the_cap_is_kept",
+    "outcome": "Tool",
+    "args": "aaaaaaaaaaaaa€€",
+    "cap": 16,
+    "expect": {
+      "text": "exit 2: aaaaaaaaaaaaa€\n[output truncated at the configured byte cap]",
+      "isError": true
+    }
+  },
+  {
+    "name": "config_has_the_tool_wire_form",
+    "outcome": "Config",
+    "args": "bad",
+    "cap": 16,
+    "expect": {
+      "text": "exit 2: bad",
+      "isError": true
+    }
+  },
+  {
+    "name": "config_is_right_trimmed",
+    "outcome": "Config",
+    "args": "bad\n\n",
+    "cap": 16,
+    "expect": {
+      "text": "exit 2: bad",
+      "isError": true
+    }
+  },
+  {
+    "name": "config_over_the_cap_gets_the_footer",
+    "outcome": "Config",
+    "args": "ccccccccccccccccc",
+    "cap": 16,
+    "expect": {
+      "text": "exit 2: cccccccccccccccc\n[output truncated at the configured byte cap]",
+      "isError": true
+    }
+  }
+]

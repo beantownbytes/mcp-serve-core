@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-serve-core"
+version = "0.1.0"
+description = "A native-MCP serving core: catalog shaping, deadlines, output caps and fail-closed testing helpers."
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+  "anyio>=4.9",
+  "mcp==2.3.0",
+  "mcp-types==2.3.0",
+  "tomli>=2; python_version < '3.11'",
+]
+
+[dependency-groups]
+dev = [
+  "mypy",
+  "pytest",
+  "ruff",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_serve_core"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.mypy]
+strict = true
+files = ["src", "tests"]
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
