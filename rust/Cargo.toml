@@ -9,7 +9,7 @@ repository = "https://github.com/beantownbytes/mcp-serve-core"
 readme = "../README.md"
 keywords = ["mcp", "mcp-server", "server", "stdio", "rmcp"]
 categories = ["development-tools", "asynchronous"]
-exclude = ["Makefile", "rust-toolchain.toml"]
+exclude = ["Makefile", "rust-toolchain.toml", "tests/golden.rs"]
 
 [lib]
 path = "src/lib.rs"
