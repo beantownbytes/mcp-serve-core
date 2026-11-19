@@ -76,8 +76,8 @@ jobs:
           persist-credentials: false
       - name: install host deps
         run: apt-get update && apt-get install -y --no-install-recommends make build-essential git ca-certificates curl
-      - run: make bootstrap
-      - run: make check
+      - run: make bootstrap SUBDIRS_ALL="rust go"
+      - run: make check SUBDIRS_ALL="rust go"
       - uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
         id: auth
       - name: publish
