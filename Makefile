@@ -1,8 +1,8 @@
 # Root Makefile for mcp-serve-core. Library only: no binaries, no release artifacts.
-# Loops the rust/ and go/ sub-Makefiles. Run `make help` for the target list.
+# Loops the rust/, go/ and python/ sub-Makefiles. Run `make help` for the target list.
 
 VERSION      := $(shell awk -F'"' '/^version[[:space:]]*=/ { print $$2; exit }' rust/Cargo.toml)
-SUBDIRS_ALL  := rust go
+SUBDIRS_ALL  := rust go python
 
 .PHONY: help bootstrap test fmt fmt-check lint check version clean
 
@@ -12,7 +12,7 @@ help: ## Print this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "Targets:\n"} \
 	  /^[a-zA-Z0-9_-]+:.*?##/ { printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
-bootstrap: ## Bootstrap every sub-project (rust, go).
+bootstrap: ## Bootstrap every sub-project (rust, go, python).
 	@for d in $(SUBDIRS_ALL); do $(MAKE) -C $$d bootstrap || exit $$?; done
 
 test: ## Run the test suite for every sub-project.

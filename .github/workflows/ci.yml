@@ -26,5 +26,21 @@ jobs:
           persist-credentials: false
       - name: install host deps
         run: apt-get update && apt-get install -y --no-install-recommends make build-essential git ca-certificates curl
-      - run: make bootstrap
-      - run: make check
+      - run: make bootstrap SUBDIRS_ALL="rust go"
+      - run: make check SUBDIRS_ALL="rust go"
+  python:
+    runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: ${{ matrix.python }}
+      UV_LOCKED: "1"
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+      - run: uv python install ${{ matrix.python }}
+      - run: make -C python check

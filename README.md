@@ -4,8 +4,9 @@ Shared native-MCP serving core for tool servers: each server supplies its handle
 
 - `rust/`: crate `mcp-serve-core`, a stdio MCP server runtime on `rmcp` for in-process tool handlers.
 - `go/`: Go module `github.com/beantownbytes/mcp-serve-core/go`, helpers that keep a Go tool server's deadline arithmetic, labels, truncation footer and annotation check byte-compatible with the Rust core. It has no helper for the `timed out after <N>s`, `canceled`, `unknown tool` or `tool handler panicked` texts; a Go server renders those itself.
+- `python/`: package `mcp_serve_core`, the same serve contract as the Rust crate on the official `mcp` Python SDK. Its result strings are checked against the same fixture (`testdata/golden_results.json`) as the Rust crate.
 
-Gate: `make check` (fmt-check, lint, test in both sub-projects). CI runs it on every PR and on main.
+Gate: `make check` (fmt-check, lint, test in every sub-project). CI runs it on every PR and on main.
 
 ## What the core owns
 
@@ -152,11 +153,68 @@ if err := mcpservecore.CheckAnnotations(hints); err != nil {
 
 A `json.Number` (from a decoder using `UseNumber`) is parsed as an unsigned integer exactly as the Rust core does, so `1800.0`, `1e3` and values of 2^64 or more fall back, and `18446744073709551615` is clamped to a 7230 s deadline. A Go argument decoded without `UseNumber` arrives as `float64`, where `1800.0` is indistinguishable from `1800` and is accepted (Rust rejects it), and a value whose `float64` form is 2^64 or more is rejected, including `18446744073709551615`, which rounds up. A Go `uint64` argument is clamped. `go.mod` declares `go 1.27`, so a consumer needs that toolchain or newer.
 
+## Python
+
+### Depend on it
+
+Pin an exact commit:
+
+```
+pip install "mcp-serve-core @ git+https://github.com/beantownbytes/mcp-serve-core@<rev>#subdirectory=python"
+```
+
+The package needs Python 3.10 or newer and pins `mcp==2.3.0` and `mcp-types==2.3.0` exactly.
+
+### Use it
+
+```python
+import asyncio
+
+from mcp_serve_core import Access, ServeConfig, ServerInfo, ToolFailure, ToolSpec, serve_stdio
+
+
+def echo(args: dict) -> str:
+    text = args.get("text")
+    if not isinstance(text, str):
+        raise ToolFailure("missing `text`")
+    return text
+
+
+spec = ToolSpec(
+    "echo",
+    "Return the `text` argument.",
+    {"type": "object", "properties": {"text": {"type": "string"}}},
+    echo,
+    Access.READ_ONLY,
+)
+config = ServeConfig.load("mytool", "MYTOOL_MCP_CONFIG")
+asyncio.run(serve_stdio(ServerInfo("mytool", "1.0.0", "Instructions."), [spec], config))
+```
+
+A handler is a sync or async callable taking the argument object and returning text. It reports failures by raising `PolicyError` (`policy refusal (exit 3): `), `ToolFailure` or `ConfigError` (both `exit 2: `); any other exception renders `tool handler panicked`. Config, deadline, byte cap and wire results follow the contract above. `python/tests/demo_server.py` is a complete runnable server and the usage reference; the stdio tests drive it.
+
+### Test it
+
+`make -C python check` runs `ruff format --check`, `ruff check`, `mypy --strict` and `pytest`. For a consumer, `mcp_serve_core.testing` exports `session`, `session_with`, `session_with_budget`, `handshake`, `by_id` and `assert_fail_closed`, matching the Rust `testing` feature: `session_with_budget` kills the server and fails if it has not exited that long after stdin closes, and `session_with` uses a 30 s budget. Call `assert_fail_closed(specs)` from a unit test so an unclassified tool or a duplicate name fails in the consumer's CI.
+
+### Behavior to know
+
+- A sync handler runs on a worker thread, which cannot be aborted. A timed-out or canceled call still returns its result on time, but the thread runs to completion and process exit waits for it. An async handler is aborted at its next await point.
+- Capabilities are `{"tools": {"listChanged": false}}`, where the Rust core sends `{"tools": {}}`. The SDK also serves the 2026-07-28 stateless protocol era.
+- The SDK drops `ttlMs` from `tools/list` for the handshake-era protocol versions, so `serve_stdio` injects `"ttlMs": 60000` itself. That shim is tied to the exact `mcp==2.3.0` pin; revisit it when the pin moves.
+- At end of input the server drains: it waits for in-flight calls to be answered or canceled before it exits.
+- A canceled request is never answered, as in the Rust core; `Server.call` reports it as `canceled`.
+- `Server.call` and `serve_stdio` require the asyncio event loop: they use `asyncio.wait` and `asyncio.Event`, so a trio loop fails every tool call.
+- A `timeout_seconds` argument or schema default counts only when it fits an unsigned 64-bit value, as in the Rust core; a larger one falls back like any other invalid value.
+- `mcp` pulls in heavy transitive dependencies (httpx2, starlette, uvicorn, pyjwt, opentelemetry-api, pydantic, jsonschema) for every consumer.
+- `assert_fail_closed` lists duplicate names sorted, unlike the Rust and Go checks.
+- `serve_stdio` rejects duplicate tool names and config naming unknown tools before any I/O.
+
 ## Development
 
 ```
-make bootstrap   # toolchains (Rust 1.97.1, Go 1.27.3)
-make check       # fmt-check, lint, test in rust/ and go/
+make bootstrap   # toolchains (Rust 1.97.1, Go 1.27.3; python/ uses uv)
+make check       # fmt-check, lint, test in rust/, go/ and python/
 ```
 
 The Rust crate version in `rust/Cargo.toml` is the release number (`make version` prints it) and is edited by hand, together with the refreshed `rust/Cargo.lock`. The first release is published by hand with `cargo publish` from `rust/`. After that, a push to `main` that sets a version not yet on crates.io publishes it from `.github/workflows/release.yml` through crates.io trusted publishing, behind the `release` environment; a push that leaves the version unchanged does nothing. The Go module lives in `go/`, so its releases will be tagged `go/vX.Y.Z` (none exist yet; pin a commit until then).
